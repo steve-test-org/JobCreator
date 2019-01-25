@@ -1,20 +1,33 @@
 AWSTemplateFormatVersion: "2010-09-09"
 
-Description: Job Creator
+Description: MyProject Deployment Pipeline
 Parameters:
   GitHubToken:
-    Type: AWS::SSM::Parameter::Value<String>
+    Type: String
     Description: GitHub repository OAuth token
-    Default: /JobCreator/Github_OAuth
-Resources:
-
+  AccountID:
+    Type: String
+    Description: The name of the environment
+  EnvironmentName:
+    Type: String
+    Description: The name of the environment
+  Organisation:
+    Type: String
+    Description: The organisation the repo belongs to
+  Repository:
+    Type: String
+    Description: The repo to deploy
+  Branch:
+    Type: String
+    Description: The branch to deploy
   ArtifactBucket:
-    Type: AWS::S3::Bucket
+    Type: String
+    Description: The branch to deploy
+Resources:
 
   Pipeline:
     Type: AWS::CodePipeline::Pipeline
     Properties:
-      Name: JobCreatorPipeline
       RoleArn: !GetAtt [PipelineRole, Arn]
       ArtifactStore: 
         Type: S3
@@ -30,11 +43,11 @@ Resources:
               Version: 1
             RunOrder: 1
             Configuration:
-              Branch: master
+              Branch: !Ref Branch
               OAuthToken: !Ref GitHubToken
-              Owner: steve-test-org
+              Owner: !Ref Organisation
               PollForSourceChanges: false
-              Repo: JobCreator
+              Repo: !Ref Repository
             OutputArtifacts:
             - Name: SourceArtifact
             InputArtifacts: []
@@ -73,13 +86,13 @@ Resources:
                 - 'codebuild:StartBuild'
                 - 'iam:PassRole'
                 - 'sns:Publish'
+                - 'codebuild:batchGetBuilds'
                 Effect: Allow
                 Resource: '*'
   
   JobCreatorCodeBuildProject:
     Type: AWS::CodeBuild::Project
     Properties:
-      Name: JobCreatorCodeBuildProject
       Description: Does stuff
       ServiceRole: !GetAtt CodeBuildRole.Arn
       Artifacts:
@@ -88,11 +101,14 @@ Resources:
         Type: LINUX_CONTAINER
         ComputeType: BUILD_GENERAL1_SMALL
         Image: aws/codebuild/python:3.6.5
-        # EnvironmentVariables:
-        # - Name: varName
-        #   Value: varValue
+        EnvironmentVariables:
+        - Name: EnvironmentName
+          Value: EnvironmentName
+        - Name: AccountID
+          Value: AccountID
       Source:
         Type: CODEPIPELINE
+        BuildSpec: build/buildspec.yml
       TimeoutInMinutes: 10
 
   CodeBuildRole:
