@@ -103,9 +103,9 @@ Resources:
         Image: aws/codebuild/python:3.6.5
         EnvironmentVariables:
         - Name: EnvironmentName
-          Value: EnvironmentName
+          Value: !Ref EnvironmentName
         - Name: AccountID
-          Value: AccountID
+          Value: !Ref AccountID
       Source:
         Type: CODEPIPELINE
         BuildSpec: build/buildspec.yml
