@@ -28,8 +28,7 @@ class PipelineManager():
         self.ssm_client = boto3.client('ssm')
         self.cfn_client = boto3.client('cloudformation')
 
-        self.github_token = self.ssm_client.get_parameter(Name=git_token_path)[
-            'Parameter']['Value']
+        self.github_token = self.ssm_client.get_parameter(Name=git_token_path)['Parameter']['Value']
 
         git = Github(self.github_token)
         self.org = git.get_organization(org_name)
@@ -60,12 +59,10 @@ class PipelineManager():
             return
 
         if contents.encoding == 'base64':
-            config = yaml.safe_load(base64.b64decode(
-                contents.content).decode('utf-8'))
+            config = yaml.safe_load(base64.b64decode(contents.content).decode('utf-8'))
 
         if 'Environments' not in config:
-            print(
-                f'Could not find environments block inconfig for {repo.name}, skipping.')
+            print(f'Could not find environments block inconfig for {repo.name}, skipping.')
             return
 
         actual_stacks = self.get_existing_stacks(self.cfn_client)
@@ -76,8 +73,7 @@ class PipelineManager():
         stacks_to_update = {k: v for k, v in config['Environments'].items(
         ) if self.get_stack_name(repo.name, k) in actual_stacks}
 
-        stacks_to_delete = [s for s in actual_stacks if self.get_env_from_stack_name(
-            s) not in config['Environments']]
+        stacks_to_delete = [s for s in actual_stacks if self.get_env_from_stack_name(s) not in config['Environments']]
 
         for env_name, config in stacks_to_create.items():
             self.create_stack(repo, env_name, config)
@@ -124,7 +120,14 @@ class PipelineManager():
         print(response)
 
     def get_params(self, repo, env_name, config):
-        return [{'ParameterKey': 'ArtifactBucket', 'ParameterValue': self.artefact_bucket, }, {'ParameterKey': 'GitHubToken', 'ParameterValue': self.github_token, }, {'ParameterKey': 'AccountID', 'ParameterValue': str(config['account']), }, {'ParameterKey': 'EnvironmentName', 'ParameterValue': env_name, }, {'ParameterKey': 'Organisation', 'ParameterValue': self.org_name, }, {'ParameterKey': 'Branch', 'ParameterValue': config['source'], }, {'ParameterKey': 'Repository', 'ParameterValue': repo.name, }, {'ParameterKey': 'ArtifactBucket', 'ParameterValue': self.artefact_bucket, }]
+        return [{'ParameterKey': 'ArtifactBucket', 'ParameterValue': self.artefact_bucket, },
+                {'ParameterKey': 'GitHubToken', 'ParameterValue': self.github_token, },
+                {'ParameterKey': 'AccountID', 'ParameterValue': str(config['account']), },
+                {'ParameterKey': 'EnvironmentName', 'ParameterValue': env_name, },
+                {'ParameterKey': 'Organisation', 'ParameterValue': self.org_name, },
+                'ParameterKey': 'Branch', 'ParameterValue': config['source'], },
+                {'ParameterKey': 'Repository', 'ParameterValue': repo.name, },
+                {'ParameterKey': 'ArtifactBucket', 'ParameterValue': self.artefact_bucket, }]
 
     def update_stack(self, repo, env_name, config):
         body = self.get_template_body(repo, config['source'])
@@ -132,12 +135,10 @@ class PipelineManager():
 
         try:
             response = self.cfn_client.update_stack(
-                StackName=stack_name,
-                TemplateBody=body,
-                Parameters=self.get_params(repo, env_name, config),
-                Capabilities=[
-                    'CAPABILITY_IAM'
-                ]
+                StackName = stack_name,
+                TemplateBody = body,
+                Parameters = self.get_params(repo, env_name, config),
+                Capabilities = ['CAPABILITY_IAM']
             )
             print(response)
         except ClientError as e:
@@ -145,11 +146,10 @@ class PipelineManager():
                 print(f'No updates are required for {stack_name}.')
             else:
                 raise
-            
 
     @staticmethod
     def get_template_body(repo, branch_name):
-        
+
         try:
             contents = PipelineManager.get_contents(
                 repo, 'pipeline.yml', branch_name)
@@ -163,4 +163,4 @@ class PipelineManager():
         return body
 
 
-job_creator(None, None)
+# job_creator(None, None)
