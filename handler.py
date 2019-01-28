@@ -81,7 +81,9 @@ class PipelineManager():
         for env_name, config in stacks_to_update.items():
             self.update_stack(repo, env_name, config)
 
-        print('Should delete:', stacks_to_delete)
+        for stack_name in stacks_to_delete:
+            self.delete_stack(stack_name)
+            print(f'Should delete resources created by {self.get_env_from_stack_name(stack_name)}')
 
     @staticmethod
     def get_stack_name(repo_name, env_name):
@@ -125,7 +127,7 @@ class PipelineManager():
                 {'ParameterKey': 'AccountID', 'ParameterValue': str(config['account']), },
                 {'ParameterKey': 'EnvironmentName', 'ParameterValue': env_name, },
                 {'ParameterKey': 'Organisation', 'ParameterValue': self.org_name, },
-                'ParameterKey': 'Branch', 'ParameterValue': config['source'], },
+                {'ParameterKey': 'Branch', 'ParameterValue': config['source'], },
                 {'ParameterKey': 'Repository', 'ParameterValue': repo.name, },
                 {'ParameterKey': 'ArtifactBucket', 'ParameterValue': self.artefact_bucket, }]
 
@@ -135,10 +137,10 @@ class PipelineManager():
 
         try:
             response = self.cfn_client.update_stack(
-                StackName = stack_name,
-                TemplateBody = body,
-                Parameters = self.get_params(repo, env_name, config),
-                Capabilities = ['CAPABILITY_IAM']
+                StackName=stack_name,
+                TemplateBody=body,
+                Parameters=self.get_params(repo, env_name, config),
+                Capabilities=['CAPABILITY_IAM']
             )
             print(response)
         except ClientError as e:
@@ -146,6 +148,11 @@ class PipelineManager():
                 print(f'No updates are required for {stack_name}.')
             else:
                 raise
+
+    def delete_stack(self, stack_name):
+        print(f'Removing {stack_name}')
+        response = self.cfn_client.delete_stack(StackName=stack_name)
+        print(response)
 
     @staticmethod
     def get_template_body(repo, branch_name):

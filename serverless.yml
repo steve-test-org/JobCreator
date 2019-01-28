@@ -5,6 +5,15 @@ provider:
   runtime: python3.7
   profile: aws-personal
   region: eu-west-1
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - "ssm:GetParameter"
+        - "cloudformation:ListStacks"
+        - "cloudformation:CreateStack"
+        - "cloudformation:UpdateStack"
+        - "cloudformation:DeleteStack"
+      Resource: '*'
 
 plugins:
   - serverless-python-requirements
@@ -16,5 +25,6 @@ custom:
 functions:
   job_creator:
     handler: handler.job_creator
+    timeout: 60
     events:
       - schedule: rate(2 minutes)
